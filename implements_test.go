@@ -1,372 +1,317 @@
 package mockcbt
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"testing"
+import (
+	"context"
+	"testing"
 
-// 	empty "github.com/golang/protobuf/ptypes/empty"
-// 	"github.com/stretchr/testify/assert"
-// 	errors "github.com/weathersource/go-errors"
-// 	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
-// 	"google.golang.org/grpc"
-// )
+	"github.com/stretchr/testify/assert"
+	errors "github.com/weathersource/go-errors"
+	pb "google.golang.org/genproto/googleapis/bigtable/v2"
+	"google.golang.org/grpc"
+)
 
-// type BatchGetDocumentsServer struct {
-// 	grpc.ServerStream
-// 	resp *pb.BatchGetDocumentsResponse
-// }
+type Bigtable_ReadRowsServer struct {
+	grpc.ServerStream
+	resp *pb.ReadRowsResponse
+}
 
-// func (s *BatchGetDocumentsServer) Send(resp *pb.BatchGetDocumentsResponse) error {
-// 	s.resp = resp
-// 	return nil
-// }
+func (s *Bigtable_ReadRowsServer) Send(resp *pb.ReadRowsResponse) error {
+	s.resp = resp
+	return nil
+}
 
-// type BatchGetDocumentsServerError struct {
-// 	grpc.ServerStream
-// 	resp *pb.BatchGetDocumentsResponse
-// }
+type Bigtable_ReadRowsServerError struct {
+	grpc.ServerStream
+	resp *pb.ReadRowsResponse
+}
 
-// func (s *BatchGetDocumentsServerError) Send(resp *pb.BatchGetDocumentsResponse) error {
-// 	return errors.NewInternalError("")
-// }
+func (s *Bigtable_ReadRowsServerError) Send(resp *pb.ReadRowsResponse) error {
+	return errors.NewInternalError("")
+}
 
-// type RunQueryServer struct {
-// 	grpc.ServerStream
-// 	resp *pb.RunQueryResponse
-// }
+type Bigtable_SampleRowKeysServer struct {
+	grpc.ServerStream
+	resp *pb.SampleRowKeysResponse
+}
 
-// func (s *RunQueryServer) Send(resp *pb.RunQueryResponse) error {
-// 	s.resp = resp
-// 	return nil
-// }
+func (s *Bigtable_SampleRowKeysServer) Send(resp *pb.SampleRowKeysResponse) error {
+	s.resp = resp
+	return nil
+}
 
-// type RunQueryServerError struct {
-// 	grpc.ServerStream
-// 	resp *pb.RunQueryResponse
-// }
+type Bigtable_SampleRowKeysServerError struct {
+	grpc.ServerStream
+	resp *pb.SampleRowKeysResponse
+}
 
-// func (s *RunQueryServerError) Send(resp *pb.RunQueryResponse) error {
-// 	return errors.NewInternalError("")
-// }
+func (s *Bigtable_SampleRowKeysServerError) Send(resp *pb.SampleRowKeysResponse) error {
+	return errors.NewInternalError("")
+}
 
-// type ListenServer struct {
-// 	grpc.ServerStream
-// 	req  *pb.ListenRequest
-// 	resp *pb.ListenResponse
-// }
+type Bigtable_MutateRowsServer struct {
+	grpc.ServerStream
+	resp *pb.MutateRowsResponse
+}
 
-// func (s *ListenServer) Send(resp *pb.ListenResponse) error {
-// 	s.resp = resp
-// 	return nil
-// }
+func (s *Bigtable_MutateRowsServer) Send(resp *pb.MutateRowsResponse) error {
+	s.resp = resp
+	return nil
+}
 
-// func (s *ListenServer) Recv() (*pb.ListenRequest, error) {
-// 	return s.req, nil
-// }
+type Bigtable_MutateRowsServerError struct {
+	grpc.ServerStream
+	resp *pb.MutateRowsResponse
+}
 
-// type ListenServerRError struct {
-// 	grpc.ServerStream
-// 	req  *pb.ListenRequest
-// 	resp *pb.ListenResponse
-// }
+func (s *Bigtable_MutateRowsServerError) Send(resp *pb.MutateRowsResponse) error {
+	return errors.NewInternalError("")
+}
 
-// func (s *ListenServerRError) Send(resp *pb.ListenResponse) error {
-// 	s.resp = resp
-// 	return nil
-// }
+func TestReadRows(t *testing.T) {
+	assert := assert.New(t)
+	_, srv, err := New()
+	assert.Nil(err)
 
-// func (s *ListenServerRError) Recv() (*pb.ListenRequest, error) {
-// 	return nil, errors.NewInternalError("")
-// }
+	s := Bigtable_ReadRowsServer{}
+	se := Bigtable_ReadRowsServerError{}
 
-// type ListenServerSError struct {
-// 	grpc.ServerStream
-// 	req  *pb.ListenRequest
-// 	resp *pb.ListenResponse
-// }
+	// test valid response
+	srv.AddRPC(
+		&pb.ReadRowsRequest{},
+		[]interface{}{
+			&pb.ReadRowsResponse{},
+		},
+	)
+	err = srv.ReadRows(&pb.ReadRowsRequest{}, &s)
+	assert.Nil(err)
+	assert.NotNil(s.resp)
 
-// func (s *ListenServerSError) Send(resp *pb.ListenResponse) error {
-// 	return errors.NewInternalError("")
-// }
+	// test error send
+	srv.AddRPC(
+		&pb.ReadRowsRequest{},
+		[]interface{}{
+			&pb.ReadRowsResponse{},
+		},
+	)
+	err = srv.ReadRows(&pb.ReadRowsRequest{}, &se)
+	assert.NotNil(err)
 
-// func (s *ListenServerSError) Recv() (*pb.ListenRequest, error) {
-// 	return s.req, nil
-// }
+	// test error response
+	srv.AddRPC(
+		&pb.ReadRowsRequest{},
+		errors.NewInternalError(""),
+	)
+	err = srv.ReadRows(&pb.ReadRowsRequest{}, &s)
+	assert.NotNil(err)
 
-// func TestGetDocument(t *testing.T) {
-// 	assert := assert.New(t)
-// 	ctx := context.Background()
-// 	_, srv, err := New()
-// 	assert.Nil(err)
+	// test error response in batch
+	srv.AddRPC(
+		&pb.ReadRowsRequest{},
+		[]interface{}{
+			errors.NewInternalError(""),
+		},
+	)
+	err = srv.ReadRows(&pb.ReadRowsRequest{}, &s)
+	assert.NotNil(err)
 
-// 	// test valid response
-// 	srv.AddRPC(
-// 		nil,
-// 		&pb.Document{},
-// 	)
-// 	resp, err := srv.GetDocument(ctx, &pb.GetDocumentRequest{})
-// 	assert.Nil(err)
-// 	assert.NotNil(resp)
+	// test wrong type in batch
+	srv.AddRPC(
+		&pb.ReadRowsRequest{},
+		[]interface{}{
+			&pb.ReadRowsRequest{},
+		},
+	)
+	assert.Panics(func() {
+		srv.ReadRows(&pb.ReadRowsRequest{}, &s)
+	})
+}
 
-// 	// test error response
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewInternalError(""),
-// 	)
-// 	_, err = srv.GetDocument(ctx, &pb.GetDocumentRequest{})
-// 	assert.NotNil(err)
-// }
+func TestSampleRowKeys(t *testing.T) {
+	assert := assert.New(t)
+	_, srv, err := New()
+	assert.Nil(err)
 
-// func TestCommit(t *testing.T) {
-// 	assert := assert.New(t)
-// 	ctx := context.Background()
-// 	_, srv, err := New()
-// 	assert.Nil(err)
+	s := Bigtable_SampleRowKeysServer{}
+	se := Bigtable_SampleRowKeysServerError{}
 
-// 	// test valid response
-// 	srv.AddRPC(
-// 		nil,
-// 		&pb.CommitResponse{},
-// 	)
-// 	resp, err := srv.Commit(ctx, &pb.CommitRequest{})
-// 	assert.Nil(err)
-// 	assert.NotNil(resp)
+	// test valid response
+	srv.AddRPC(
+		&pb.SampleRowKeysRequest{},
+		[]interface{}{
+			&pb.SampleRowKeysResponse{},
+		},
+	)
+	err = srv.SampleRowKeys(&pb.SampleRowKeysRequest{}, &s)
+	assert.Nil(err)
+	assert.NotNil(s.resp)
 
-// 	// test error response
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewInternalError(""),
-// 	)
-// 	_, err = srv.Commit(ctx, &pb.CommitRequest{})
-// 	assert.NotNil(err)
-// }
+	// test error send
+	srv.AddRPC(
+		&pb.SampleRowKeysRequest{},
+		[]interface{}{
+			&pb.SampleRowKeysResponse{},
+		},
+	)
+	err = srv.SampleRowKeys(&pb.SampleRowKeysRequest{}, &se)
+	assert.NotNil(err)
 
-// func TestBatchGetDocuments(t *testing.T) {
-// 	assert := assert.New(t)
-// 	_, srv, err := New()
-// 	assert.Nil(err)
+	// test error response
+	srv.AddRPC(
+		&pb.SampleRowKeysRequest{},
+		errors.NewInternalError(""),
+	)
+	err = srv.SampleRowKeys(&pb.SampleRowKeysRequest{}, &s)
+	assert.NotNil(err)
 
-// 	bs := BatchGetDocumentsServer{}
-// 	bse := BatchGetDocumentsServerError{}
+	// test error response in batch
+	srv.AddRPC(
+		&pb.SampleRowKeysRequest{},
+		[]interface{}{
+			errors.NewInternalError(""),
+		},
+	)
+	err = srv.SampleRowKeys(&pb.SampleRowKeysRequest{}, &s)
+	assert.NotNil(err)
 
-// 	// test valid response
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.BatchGetDocumentsResponse{},
-// 		},
-// 	)
-// 	err = srv.BatchGetDocuments(&pb.BatchGetDocumentsRequest{}, &bs)
-// 	assert.Nil(err)
-// 	assert.NotNil(bs.resp)
+	// test wrong type in batch
+	srv.AddRPC(
+		&pb.SampleRowKeysRequest{},
+		[]interface{}{
+			&pb.SampleRowKeysRequest{},
+		},
+	)
+	assert.Panics(func() {
+		srv.SampleRowKeys(&pb.SampleRowKeysRequest{}, &s)
+	})
+}
 
-// 	// test error send
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.BatchGetDocumentsResponse{},
-// 		},
-// 	)
-// 	err = srv.BatchGetDocuments(&pb.BatchGetDocumentsRequest{}, &bse)
-// 	assert.NotNil(err)
+func TestMutateRow(t *testing.T) {
+	assert := assert.New(t)
+	ctx := context.Background()
+	_, srv, err := New()
+	assert.Nil(err)
 
-// 	// test error response
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewInternalError(""),
-// 	)
-// 	err = srv.BatchGetDocuments(&pb.BatchGetDocumentsRequest{}, &bs)
-// 	assert.NotNil(err)
+	// test valid response
+	srv.AddRPC(
+		&pb.MutateRowRequest{},
+		&pb.MutateRowResponse{},
+	)
+	resp, err := srv.MutateRow(ctx, &pb.MutateRowRequest{})
+	assert.Nil(err)
+	assert.NotNil(resp)
 
-// 	// test error response in batch
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			errors.NewInternalError(""),
-// 		},
-// 	)
-// 	err = srv.BatchGetDocuments(&pb.BatchGetDocumentsRequest{}, &bs)
-// 	assert.NotNil(err)
+	// test error response
+	srv.AddRPC(
+		&pb.MutateRowRequest{},
+		errors.NewInternalError(""),
+	)
+	_, err = srv.MutateRow(ctx, &pb.MutateRowRequest{})
+	assert.NotNil(err)
+}
 
-// 	// test wrong type in batch
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.GetDocumentRequest{},
-// 		},
-// 	)
-// 	assert.Panics(func() {
-// 		srv.BatchGetDocuments(&pb.BatchGetDocumentsRequest{}, &bs)
-// 	})
-// }
+func TestMutateRows(t *testing.T) {
+	assert := assert.New(t)
+	_, srv, err := New()
+	assert.Nil(err)
 
-// func TestRunQuery(t *testing.T) {
-// 	assert := assert.New(t)
-// 	_, srv, err := New()
-// 	assert.Nil(err)
+	s := Bigtable_MutateRowsServer{}
+	se := Bigtable_MutateRowsServerError{}
 
-// 	qs := RunQueryServer{}
-// 	qse := RunQueryServerError{}
+	// test valid response
+	srv.AddRPC(
+		&pb.MutateRowsRequest{},
+		[]interface{}{
+			&pb.MutateRowsResponse{},
+		},
+	)
+	err = srv.MutateRows(&pb.MutateRowsRequest{}, &s)
+	assert.Nil(err)
+	assert.NotNil(s.resp)
 
-// 	// test valid response
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.RunQueryResponse{},
-// 		},
-// 	)
-// 	err = srv.RunQuery(&pb.RunQueryRequest{}, &qs)
-// 	assert.Nil(err)
-// 	assert.NotNil(qs.resp)
+	// test error send
+	srv.AddRPC(
+		&pb.MutateRowsRequest{},
+		[]interface{}{
+			&pb.MutateRowsResponse{},
+		},
+	)
+	err = srv.MutateRows(&pb.MutateRowsRequest{}, &se)
+	assert.NotNil(err)
 
-// 	// test error send
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.RunQueryResponse{},
-// 		},
-// 	)
-// 	err = srv.RunQuery(&pb.RunQueryRequest{}, &qse)
-// 	assert.NotNil(err)
+	// test error response
+	srv.AddRPC(
+		&pb.MutateRowsRequest{},
+		errors.NewInternalError(""),
+	)
+	err = srv.MutateRows(&pb.MutateRowsRequest{}, &s)
+	assert.NotNil(err)
 
-// 	// test error response
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewInternalError(""),
-// 	)
-// 	err = srv.RunQuery(&pb.RunQueryRequest{}, &qs)
-// 	assert.NotNil(err)
+	// test error response in batch
+	srv.AddRPC(
+		&pb.MutateRowsRequest{},
+		[]interface{}{
+			errors.NewInternalError(""),
+		},
+	)
+	err = srv.MutateRows(&pb.MutateRowsRequest{}, &s)
+	assert.NotNil(err)
 
-// 	// test error response in batch
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			errors.NewInternalError(""),
-// 		},
-// 	)
-// 	err = srv.RunQuery(&pb.RunQueryRequest{}, &qs)
-// 	assert.NotNil(err)
+	// test wrong type in batch
+	srv.AddRPC(
+		&pb.MutateRowsRequest{},
+		[]interface{}{
+			&pb.MutateRowsRequest{},
+		},
+	)
+	assert.Panics(func() {
+		srv.MutateRows(&pb.MutateRowsRequest{}, &s)
+	})
+}
 
-// 	// test wrong type in batch
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.GetDocumentRequest{},
-// 		},
-// 	)
-// 	assert.Panics(func() {
-// 		srv.RunQuery(&pb.RunQueryRequest{}, &qs)
-// 	})
-// }
+func TestCheckAndMutateRow(t *testing.T) {
+	assert := assert.New(t)
+	ctx := context.Background()
+	_, srv, err := New()
+	assert.Nil(err)
 
-// func TestBeginTransaction(t *testing.T) {
-// 	assert := assert.New(t)
-// 	ctx := context.Background()
-// 	_, srv, err := New()
-// 	assert.Nil(err)
+	// test valid response
+	srv.AddRPC(
+		&pb.CheckAndMutateRowRequest{},
+		&pb.CheckAndMutateRowResponse{},
+	)
+	resp, err := srv.CheckAndMutateRow(ctx, &pb.CheckAndMutateRowRequest{})
+	assert.Nil(err)
+	assert.NotNil(resp)
 
-// 	// test valid response
-// 	srv.AddRPC(
-// 		nil,
-// 		&pb.BeginTransactionResponse{},
-// 	)
-// 	resp, err := srv.BeginTransaction(ctx, &pb.BeginTransactionRequest{})
-// 	assert.Nil(err)
-// 	assert.NotNil(resp)
+	// test error response
+	srv.AddRPC(
+		&pb.CheckAndMutateRowRequest{},
+		errors.NewInternalError(""),
+	)
+	_, err = srv.CheckAndMutateRow(ctx, &pb.CheckAndMutateRowRequest{})
+	assert.NotNil(err)
+}
 
-// 	// test error response
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewInternalError(""),
-// 	)
-// 	_, err = srv.BeginTransaction(ctx, &pb.BeginTransactionRequest{})
-// 	assert.NotNil(err)
-// }
+func TestReadModifyWriteRow(t *testing.T) {
+	assert := assert.New(t)
+	ctx := context.Background()
+	_, srv, err := New()
+	assert.Nil(err)
 
-// func TestRollback(t *testing.T) {
-// 	assert := assert.New(t)
-// 	ctx := context.Background()
-// 	_, srv, err := New()
-// 	assert.Nil(err)
+	// test valid response
+	srv.AddRPC(
+		&pb.ReadModifyWriteRowRequest{},
+		&pb.ReadModifyWriteRowResponse{},
+	)
+	resp, err := srv.ReadModifyWriteRow(ctx, &pb.ReadModifyWriteRowRequest{})
+	assert.Nil(err)
+	assert.NotNil(resp)
 
-// 	// test valid response
-// 	srv.AddRPC(
-// 		nil,
-// 		&empty.Empty{},
-// 	)
-// 	resp, err := srv.Rollback(ctx, &pb.RollbackRequest{})
-// 	assert.Nil(err)
-// 	assert.NotNil(resp)
-
-// 	// test error response
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewInternalError(""),
-// 	)
-// 	_, err = srv.Rollback(ctx, &pb.RollbackRequest{})
-// 	assert.NotNil(err)
-// }
-
-// func TestListen(t *testing.T) {
-// 	assert := assert.New(t)
-// 	_, srv, err := New()
-// 	assert.Nil(err)
-
-// 	ls := ListenServer{req: &pb.ListenRequest{}}
-// 	lsre := ListenServerRError{req: &pb.ListenRequest{}}
-// 	lsse := ListenServerSError{req: &pb.ListenRequest{}}
-
-// 	// test valid response
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.ListenResponse{},
-// 		},
-// 	)
-// 	err = srv.Listen(&ls)
-// 	assert.Nil(err)
-// 	assert.NotNil(ls.resp)
-
-// 	// test error recv
-// 	err = srv.Listen(&lsre)
-// 	assert.NotNil(err)
-
-// 	// test error send
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			&pb.ListenResponse{},
-// 		},
-// 	)
-// 	err = srv.Listen(&lsse)
-// 	assert.NotNil(err)
-
-// 	// test error response
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewInternalError(""),
-// 	)
-// 	err = srv.Listen(&ls)
-// 	assert.NotNil(err)
-
-// 	// test error response in stream
-// 	srv.AddRPC(
-// 		nil,
-// 		[]interface{}{
-// 			errors.NewInternalError(""),
-// 		},
-// 	)
-// 	err = srv.Listen(&ls)
-// 	assert.NotNil(err)
-
-// 	// test panic on unknown error
-// 	fmt.Println("FOOBAR")
-// 	srv.AddRPC(
-// 		nil,
-// 		errors.NewUnknownError(""),
-// 	)
-// 	assert.Panics(func() {
-// 		srv.Listen(&ls)
-// 	})
-// }
+	// test error response
+	srv.AddRPC(
+		&pb.ReadModifyWriteRowRequest{},
+		errors.NewInternalError(""),
+	)
+	_, err = srv.ReadModifyWriteRow(ctx, &pb.ReadModifyWriteRowRequest{})
+	assert.NotNil(err)
+}
