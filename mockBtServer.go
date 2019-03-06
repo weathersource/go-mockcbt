@@ -6,15 +6,31 @@ import (
 	"context"
 	"fmt"
 
+	gsrv "github.com/weathersource/go-gsrv"
 	pb "google.golang.org/genproto/googleapis/bigtable/v2"
 )
+
+type MockBtServer struct {
+	*MockServer
+}
+
+func newBtServer() (*MockBtServer, error) {
+	srv, err := gsrv.NewServer()
+	if err != nil {
+		return nil, err
+	}
+	mock := &MockBtServer{&MockServer{Addr: srv.Addr}}
+	pb.RegisterBigtableServer(srv.Gsrv, mock)
+	srv.Start()
+	return mock, nil
+}
 
 // ReadRows streams back the contents of all requested rows in key order,
 // optionally applying the same Reader filter to each. Depending on their
 // size, rows and cells may be broken up across multiple responses, but
 // atomicity of each row will still be preserved. See the
 // ReadRowsResponse documentation for details.
-func (s *MockServer) ReadRows(req *pb.ReadRowsRequest, svr pb.Bigtable_ReadRowsServer) error {
+func (s *MockBtServer) ReadRows(req *pb.ReadRowsRequest, svr pb.Bigtable_ReadRowsServer) error {
 	res, err := s.popRPC(req)
 	if err != nil {
 		return err
@@ -40,7 +56,7 @@ func (s *MockServer) ReadRows(req *pb.ReadRowsRequest, svr pb.Bigtable_ReadRowsS
 // equal size, which can be used to break up the data for distributed tasks
 // like mapreduces.
 
-func (s *MockServer) SampleRowKeys(req *pb.SampleRowKeysRequest, svr pb.Bigtable_SampleRowKeysServer) error {
+func (s *MockBtServer) SampleRowKeys(req *pb.SampleRowKeysRequest, svr pb.Bigtable_SampleRowKeysServer) error {
 	res, err := s.popRPC(req)
 	if err != nil {
 		return err
@@ -63,7 +79,7 @@ func (s *MockServer) SampleRowKeys(req *pb.SampleRowKeysRequest, svr pb.Bigtable
 
 // MutateRow mutates a row atomically. Cells already present in the row are
 // left unchanged unless explicitly changed by `mutation`.
-func (s *MockServer) MutateRow(ctx context.Context, req *pb.MutateRowRequest) (*pb.MutateRowResponse, error) {
+func (s *MockBtServer) MutateRow(ctx context.Context, req *pb.MutateRowRequest) (*pb.MutateRowResponse, error) {
 	res, err := s.popRPC(req)
 	if err != nil {
 		return nil, err
@@ -74,7 +90,7 @@ func (s *MockServer) MutateRow(ctx context.Context, req *pb.MutateRowRequest) (*
 // MutateRows mutates multiple rows in a batch. Each individual row is
 // mutated atomically as in MutateRow, but the entire batch is not executed
 // atomically.
-func (s *MockServer) MutateRows(req *pb.MutateRowsRequest, svr pb.Bigtable_MutateRowsServer) error {
+func (s *MockBtServer) MutateRows(req *pb.MutateRowsRequest, svr pb.Bigtable_MutateRowsServer) error {
 	res, err := s.popRPC(req)
 	if err != nil {
 		return err
@@ -97,7 +113,7 @@ func (s *MockServer) MutateRows(req *pb.MutateRowsRequest, svr pb.Bigtable_Mutat
 
 // CheckAndMutateRow mutates a row atomically based on the output of a
 // predicate Reader filter.
-func (s *MockServer) CheckAndMutateRow(ctx context.Context, req *pb.CheckAndMutateRowRequest) (*pb.CheckAndMutateRowResponse, error) {
+func (s *MockBtServer) CheckAndMutateRow(ctx context.Context, req *pb.CheckAndMutateRowRequest) (*pb.CheckAndMutateRowResponse, error) {
 	res, err := s.popRPC(req)
 	if err != nil {
 		return nil, err
@@ -111,7 +127,7 @@ func (s *MockServer) CheckAndMutateRow(ctx context.Context, req *pb.CheckAndMuta
 // new value for the timestamp is the greater of the existing timestamp or
 // the current server time. The method returns the new contents of all
 // modified cells.
-func (s *MockServer) ReadModifyWriteRow(ctx context.Context, req *pb.ReadModifyWriteRowRequest) (*pb.ReadModifyWriteRowResponse, error) {
+func (s *MockBtServer) ReadModifyWriteRow(ctx context.Context, req *pb.ReadModifyWriteRowRequest) (*pb.ReadModifyWriteRowResponse, error) {
 	res, err := s.popRPC(req)
 	if err != nil {
 		return nil, err

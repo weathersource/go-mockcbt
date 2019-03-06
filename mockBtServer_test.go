@@ -10,6 +10,14 @@ import (
 	"google.golang.org/grpc"
 )
 
+func TestNewBtServer(t *testing.T) {
+	assert := assert.New(t)
+
+	server, err := newBtServer()
+	assert.NotNil(server)
+	assert.Nil(err)
+}
+
 type Bigtable_ReadRowsServer struct {
 	grpc.ServerStream
 	resp *pb.ReadRowsResponse

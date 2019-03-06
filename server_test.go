@@ -9,14 +9,6 @@ import (
 	pb "google.golang.org/genproto/googleapis/bigtable/v2"
 )
 
-func TestNewServer(t *testing.T) {
-	assert := assert.New(t)
-
-	server, err := newServer()
-	assert.NotNil(server)
-	assert.Nil(err)
-}
-
 func TestReset(t *testing.T) {
 	assert := assert.New(t)
 

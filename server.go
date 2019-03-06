@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	errors "github.com/weathersource/go-errors"
-	gsrv "github.com/weathersource/go-gsrv"
 	pb "google.golang.org/genproto/googleapis/bigtable/v2"
 )
 
@@ -22,17 +21,6 @@ type MockServer struct {
 type reqItem struct {
 	wantReq proto.Message
 	adjust  func(gotReq proto.Message)
-}
-
-func newServer() (*MockServer, error) {
-	srv, err := gsrv.NewServer()
-	if err != nil {
-		return nil, err
-	}
-	mock := &MockServer{Addr: srv.Addr}
-	pb.RegisterBigtableServer(srv.Gsrv, mock)
-	srv.Start()
-	return mock, nil
 }
 
 // Reset returns the MockServer to an empty state.
