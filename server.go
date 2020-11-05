@@ -65,7 +65,7 @@ func (s *MockServer) popRPC(gotReq proto.Message) (interface{}, error) {
 			ri.adjust(gotReq)
 		}
 		if !proto.Equal(gotReq, ri.wantReq) {
-			return nil, errors.NewInternalError(fmt.Sprintf("mockcbt.popRPC: Bad request\ngot:  %T\n%s\nwant: %T\n%s",
+			return nil, errors.NewUnknownError(fmt.Sprintf("mockcbt.popRPC: Bad request\ngot:  %T\n%s\nwant: %T\n%s",
 				gotReq, proto.MarshalTextString(gotReq),
 				ri.wantReq, proto.MarshalTextString(ri.wantReq)))
 		}
