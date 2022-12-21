@@ -5,7 +5,8 @@ package mockcbt
 import (
 	"fmt"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/encoding/prototext"
 	errors "github.com/weathersource/go-errors"
 	pb "google.golang.org/genproto/googleapis/bigtable/v2"
 )
@@ -66,8 +67,8 @@ func (s *MockServer) popRPC(gotReq proto.Message) (interface{}, error) {
 		}
 		if !proto.Equal(gotReq, ri.wantReq) {
 			return nil, errors.NewUnknownError(fmt.Sprintf("mockcbt.popRPC: Bad request\ngot:  %T\n%s\nwant: %T\n%s",
-				gotReq, proto.MarshalTextString(gotReq),
-				ri.wantReq, proto.MarshalTextString(ri.wantReq)))
+				gotReq, prototext.Format(gotReq),
+				ri.wantReq, prototext.Format(ri.wantReq)))
 		}
 	}
 	if err, ok := resp.(error); ok {

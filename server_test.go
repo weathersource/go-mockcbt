@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	assert "github.com/stretchr/testify/assert"
 	pb "google.golang.org/genproto/googleapis/bigtable/v2"
 )
