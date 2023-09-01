@@ -5,7 +5,7 @@ package mockcbt
 import (
 	"context"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	empty "google.golang.org/protobuf/types/known/emptypb"
 	gsrv "github.com/weathersource/go-gsrv"
 	pb "google.golang.org/genproto/googleapis/bigtable/admin/v2"
 	v1 "google.golang.org/genproto/googleapis/iam/v1"
@@ -117,6 +117,16 @@ func (s *MockBtAdminServer) UpdateCluster(ctx context.Context, req *pb.Cluster) 
 	return res.(*longrunning.Operation), nil
 }
 
+// To disable autoscaling, clear cluster_config.cluster_autoscaling_config,
+// and explicitly set a serve_node count via the update_mask.
+func (s *MockBtAdminServer) PartialUpdateCluster(ctx context.Context, req *pb.PartialUpdateClusterRequest) (*longrunning.Operation, error) {
+	res, err := s.popRPC(req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*longrunning.Operation), nil
+}
+
 // Deletes a cluster from an instance.
 func (s *MockBtAdminServer) DeleteCluster(ctx context.Context, req *pb.DeleteClusterRequest) (*empty.Empty, error) {
 	res, err := s.popRPC(req)
@@ -198,4 +208,14 @@ func (s *MockBtAdminServer) TestIamPermissions(ctx context.Context, req *v1.Test
 		return nil, err
 	}
 	return res.(*v1.TestIamPermissionsResponse), nil
+}
+
+// Lists hot tablets in a cluster, within the time range provided. Hot
+// tablets are ordered based on CPU usage.
+func (s *MockBtAdminServer) ListHotTablets(ctx context.Context, req *pb.ListHotTabletsRequest) (*pb.ListHotTabletsResponse, error) {
+	res, err := s.popRPC(req)
+	if err != nil {
+		return nil, err
+	}
+	return res.(*pb.ListHotTabletsResponse), nil
 }

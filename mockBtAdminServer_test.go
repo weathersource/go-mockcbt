@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/protobuf/ptypes/empty"
+	empty "google.golang.org/protobuf/types/known/emptypb"
 	"github.com/stretchr/testify/assert"
 	errors "github.com/weathersource/go-errors"
 	pb "google.golang.org/genproto/googleapis/bigtable/admin/v2"
@@ -260,6 +260,30 @@ func TestUpdateCluster(t *testing.T) {
 	assert.NotNil(err)
 }
 
+func TestPartialUpdateCluster(t *testing.T) {
+	assert := assert.New(t)
+	ctx := context.Background()
+	_, srv, err := NewAdmin()
+	assert.Nil(err)
+
+	// test valid response
+	srv.AddRPC(
+		&pb.PartialUpdateClusterRequest{},
+		&longrunning.Operation{},
+	)
+	resp, err := srv.PartialUpdateCluster(ctx, &pb.PartialUpdateClusterRequest{})
+	assert.Nil(err)
+	assert.NotNil(resp)
+
+	// test error response
+	srv.AddRPC(
+		&pb.Cluster{},
+		errors.NewInternalError(""),
+	)
+	_, err = srv.PartialUpdateCluster(ctx, &pb.PartialUpdateClusterRequest{})
+	assert.NotNil(err)
+}
+
 func TestDeleteCluster(t *testing.T) {
 	assert := assert.New(t)
 	ctx := context.Background()
@@ -473,5 +497,29 @@ func TestTestIamPermissions(t *testing.T) {
 		errors.NewInternalError(""),
 	)
 	_, err = srv.TestIamPermissions(ctx, &v1.TestIamPermissionsRequest{})
+	assert.NotNil(err)
+}
+
+func TestListHotTablets(t *testing.T) {
+	assert := assert.New(t)
+	ctx := context.Background()
+	_, srv, err := NewAdmin()
+	assert.Nil(err)
+
+	// test valid response
+	srv.AddRPC(
+		&pb.ListHotTabletsRequest{},
+		&pb.ListHotTabletsResponse{},
+	)
+	resp, err := srv.ListHotTablets(ctx, &pb.ListHotTabletsRequest{})
+	assert.Nil(err)
+	assert.NotNil(resp)
+
+	// test error response
+	srv.AddRPC(
+		&pb.ListHotTabletsRequest{},
+		errors.NewInternalError(""),
+	)
+	_, err = srv.ListHotTablets(ctx, &pb.ListHotTabletsRequest{})
 	assert.NotNil(err)
 }
